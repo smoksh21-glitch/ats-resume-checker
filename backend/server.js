@@ -6,6 +6,7 @@ const fs = require('fs');
 
 // Load environment variables
 dotenv.config();
+
 console.log("OPENAI KEY:", process.env.OPENAI_API_KEY ? "LOADED" : "NOT FOUND");
 
 // Import routes
@@ -17,13 +18,19 @@ const connectDB = require('./config/database');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
-}));
+
+// ✅ ===============================
+// ✅ FIXED CORS (VERY IMPORTANT)
+// allow requests from ANY frontend
+// ===============================
+app.use(cors());
+// ===============================
+
+
+// Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -31,22 +38,26 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Connect to MongoDB (optional - comment out if not using database)
+
+// Connect to MongoDB (optional)
 if (process.env.MONGODB_URI) {
   connectDB();
 }
 
+
 // Routes
 app.use('/api', resumeRoutes);
 
+
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
+  res.status(200).json({
+    status: 'OK',
     message: 'ATS Resume Checker API is running',
     timestamp: new Date().toISOString()
   });
 });
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -58,6 +69,7 @@ app.use((err, req, res, next) => {
   });
 });
 
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -65,6 +77,7 @@ app.use((req, res) => {
     error: 'Route not found'
   });
 });
+
 
 // Start server
 app.listen(PORT, () => {
